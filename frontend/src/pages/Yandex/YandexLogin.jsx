@@ -1,8 +1,7 @@
-import React from "react";
-import { Link } from "react-router-dom"; // Добавьте этот импорт
+import React, { useEffect } from "react";
 
 const YANDEX_CLIENT_ID = import.meta.env.VITE_YANDEX_CLIENT_ID;
-const REDIRECT_URI = "http://localhost:8000/auth/callback";
+const REDIRECT_URI = "http://localhost:5173/yandexcallback"; // Новый URL на фронте
 
 const YandexLogin = () => {
   const handleLogin = () => {
