@@ -12,7 +12,8 @@ const Register = () => {
     e.preventDefault();
     try {
       await api.post('/auth/users/', { username, email, password });
-      navigate('/login');
+      localStorage.setItem("email", email);
+      navigate('/activateprompt');
     } catch (error) {
       console.error('Registration failed:', error);
     }

@@ -154,3 +154,16 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
 }
+
+DJOSER = {
+    "USER_ID_FIELD": "id",
+    "ACTIVATION_URL": "auth/activate/{uid}/{token}/",
+    "SEND_ACTIVATION_EMAIL": True,
+    "PERMISSIONS": {  # Доступ к активации должен быть без аутентификации!
+        "activation": ["rest_framework.permissions.AllowAny"],
+    },
+}
+
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DOMAIN = "localhost:5173"
