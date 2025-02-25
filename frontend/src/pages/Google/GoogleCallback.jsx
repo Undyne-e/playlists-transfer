@@ -17,7 +17,9 @@ const GoogleCallback = () => {
     })
         .then(response => {
           console.log('Токены получены:', response.data);
-          // Сохраняем токены в localStorage или состоянии
+          //localStorage.setItem('google_token', data);
+          //navigate("/home"); 
+
         })
         .catch(error => {
           console.error('Ошибка:', error);

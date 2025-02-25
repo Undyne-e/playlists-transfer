@@ -17,52 +17,59 @@ from django.http import JsonResponse
 import json
 from django.views import View
 import requests
+from django.http import JsonResponse
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 #env
 from dotenv import load_dotenv
 import os
 load_dotenv()
 
-@method_decorator(csrf_exempt, name='dispatch')
-class YandexOAuthCallbackView(View):
+class YandexOAuthCallbackView(APIView):
+    """Обрабатывает код от Яндекса, проверяет Djoser-токен, получает access_token"""
+    
+
+    authentication_classes = [TokenAuthentication]  # Проверка Djoser-токена
+    permission_classes = [IsAuthenticated]  # Разрешаем только аутентифицированным пользователям
 
     def get(self, request):
 
+        print("HEADERS:", request.headers)  # Вывод всех заголовков
+        print("AUTH USER:", request.user)   # Проверка аутентификации
+
+        # Получаем код из запроса
         code = request.GET.get("code")
         if not code:
-            return JsonResponse({"error": "Код авторизации отсутствует"}, status=400)
+            return Response({"error": "No code provided"}, status=400)
 
-        YANDEX_OAUTH_URL = "https://oauth.yandex.ru/token"
-        YANDEX_REDIRECT_URI = "http://localhost:8000/auth/callback"
-
-        payload = {
+        # Отправляем запрос на получение access_token Яндекса
+        data = {
             "grant_type": "authorization_code",
             "code": code,
-            "client_id": os.getenv("YANDEX_CLIENT_ID"),
-            "client_secret": os.getenv("YANDEX_CLIENT_SECRET"),
-            "redirect_uri": YANDEX_REDIRECT_URI,
+            "client_id": os.getenv('YANDEX_CLIENT_ID'),
+            "client_secret": os.getenv('YANDEX_CLIENT_SECRET'),
         }
-        token_data = requests.post(YANDEX_OAUTH_URL, data=payload).json()
+        response = requests.post("https://oauth.yandex.ru/token", data=data)
+        response_data = response.json()
 
-        if "access_token" not in token_data:
-            return JsonResponse(token_data, status=400)
+        if "access_token" in response_data:
+            access_token = response_data["access_token"]
+            refresh_token = response_data["refresh_token"]
+            user = request.user
+            YandexToken.objects.update_or_create(
+                user = user,
+                defaults={
+                    'access_token': access_token,
+                    'refresh_token': refresh_token,
+                }
+            )
 
-        # Предположим, что пользователь уже аутентифицирован
-        user = request.user
-        if not user.is_authenticated:
-            return JsonResponse({"error": "Пользователь не аутентифицирован"}, status=401)
+            return Response({"message": "Token saved successfully!", "yandex_token": response_data["access_token"]})
 
-        # Сохраняем токен в базе данных
-        YandexToken.objects.update_or_create(
-            user=user,
-            defaults={
-                'access_token': token_data['access_token'],
-                'refresh_token': token_data.get('refresh_token'),
-                'expires_in': token_data.get('expires_in'),
-            }
-        )
-
-        return JsonResponse({"status": "success", "message": "Токен успешно сохранен"})
+        return Response(response_data, status=400)
     
 
 @method_decorator(csrf_exempt, name='dispatch')
