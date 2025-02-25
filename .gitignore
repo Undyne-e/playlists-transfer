@@ -27,7 +27,7 @@ db.sqlite3
 # Environments
 *.env
 .env.*
-client_secret.json
+backend/client_secret.json
 
 # IDE/Editor
 .idea/
