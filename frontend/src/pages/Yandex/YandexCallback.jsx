@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const YANDEX_BACKEND_URL = "http://localhost:8000/auth/callback";
-
 const YandexCallback = () => {
   const [message, setMessage] = useState("Обработка...");
   const navigate = useNavigate();
@@ -10,8 +8,8 @@ const YandexCallback = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
-    const token = localStorage.getItem("access_token"); // Djoser-токен
-
+    const token = localStorage.getItem('access_token');
+  
     if (!code) {
       setMessage("Ошибка: не найден код авторизации.");
       return;
@@ -20,16 +18,20 @@ const YandexCallback = () => {
       setMessage("Ошибка: пользователь не аутентифицирован.");
       return;
     }
-
-    fetch(`${YANDEX_BACKEND_URL}?code=${code}`, {
+  
+    fetch(`http://localhost:8000/auth/yandex_callback/?code=${code}`, {
       method: "GET",
-      mode: "cors", // Добавляем CORS
       headers: {
-        "Authorization": `Token ${token}`, // Передаем Djoser-токен
         "Content-Type": "application/json",
+        "Authorization": `Token ${token}`, 
       },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.status === "success") {
           setMessage("Токен успешно сохранен!");
@@ -38,7 +40,10 @@ const YandexCallback = () => {
           setMessage(`Ошибка: ${data.error || "Что-то пошло не так"}`);
         }
       })
-      .catch(() => setMessage("Ошибка сети. Попробуйте еще раз."));
+      .catch((error) => {
+        console.error("Ошибка сети:", error);
+        setMessage("Ошибка сети. Попробуйте еще раз.");
+      });
   }, [navigate]);
 
   return (
