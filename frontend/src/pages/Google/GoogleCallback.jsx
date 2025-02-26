@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 const GoogleCallback = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -16,8 +19,10 @@ const GoogleCallback = () => {
         },
     })
         .then(response => {
-          console.log('Токены получены:', response.data);
-          // Сохраняем токены в localStorage или состоянии
+          console.log('Токен получен:', response.data);
+          localStorage.setItem('google_token', response.data.google_token);
+          navigate("/home"); 
+
         })
         .catch(error => {
           console.error('Ошибка:', error);
