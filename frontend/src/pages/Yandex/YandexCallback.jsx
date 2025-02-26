@@ -1,12 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:8000/auth/yandex_callback/";
 
 export default function YandexCallback() {
     const navigate = useNavigate();
+    const hasFetched = useRef(false); // Флаг, предотвращающий повторный запрос
 
     useEffect(() => {
+        if (hasFetched.current) return; // Если уже запрашивали, выходим
+        hasFetched.current = true; // Устанавливаем флаг
 
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
@@ -21,7 +24,7 @@ export default function YandexCallback() {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Токены получены:', response.data);
+                console.log('Токен получен:', data);
                 localStorage.setItem('yandex_token', data.yandex_token);
                 navigate("/home"); 
             })

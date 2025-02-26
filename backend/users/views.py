@@ -37,8 +37,8 @@ class YandexOAuthCallbackView(APIView):
 
     def get(self, request):
 
-        print("HEADERS:", request.headers)  # Вывод всех заголовков
-        print("AUTH USER:", request.user)   # Проверка аутентификации
+        # print("HEADERS:", request.headers) 
+        # print("AUTH USER:", request.user)  
 
         # Получаем код из запроса
         code = request.GET.get("code")
@@ -67,7 +67,7 @@ class YandexOAuthCallbackView(APIView):
                 }
             )
 
-            return Response({"message": "Token saved successfully!", "yandex_token": response_data["access_token"]})
+            return Response({"message": "Token saved successfully!", 'yandex_token': access_token})
 
         return Response(response_data, status=400)
     
@@ -125,7 +125,7 @@ class GoogleOAuthCallbackView(View):
             )
 
             return JsonResponse({
-                'access_token': access_token,
+                'google_token': access_token,
                 'refresh_token': refresh_token,
             })
         except Exception as e:
