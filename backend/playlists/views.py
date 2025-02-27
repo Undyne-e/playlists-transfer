@@ -13,6 +13,10 @@ import yandex_music
 from .parsers.yandex_music_api import YandexMusicAPI
 from .models import YandexPlaylists, YandexPlaylistTracks
 
+#google
+from .parsers.youtube_music_api import YouTubeMusicAPI
+from .models import YouTubePlaylists, YouTubePlaylistTracks
+
 
 class YandexSavePlaylistsView(APIView):
 
@@ -97,6 +101,85 @@ class YandexSaveTracksView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+
+
+class YouTubeSavePlaylistsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]  
+
+    def post(self, request):
+        token = request.data.get('google_token')
+        user = request.user
+
+        if not token:
+            return Response({'error': 'Не предоставлен токен YouTube'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            youtube_client = YouTubeMusicAPI(token)
+            playlists = youtube_client.get_playlists()
+            print(playlists[0])
+
+            saved_playlists = []
+            for playlist in playlists:
+                playlist_obj, created = YouTubePlaylists.objects.update_or_create(
+                    user=user,
+                    playlist_id=playlist['id'],
+                    defaults={  
+                        "title": playlist['snippet']['title'],
+                        #"track_count": playlist['contentDetails']['itemCount']
+                    }
+                )
+
+                saved_playlists.append({
+                    "youtube_playlist_id": playlist_obj.playlist_id,
+                    "user_id": user.id,
+                    "title": playlist_obj.title,
+                    "source_platform": "youtube_music"
+                })
+
+            return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class YouTubeSaveTracksView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]  
+
+    def post(self, request):
+        token = request.data.get('google_token')
+        playlist_id = request.data.get('youtube_playlist_id')
+        user = request.user
+
+        if not token or not playlist_id:
+            return Response({'error': 'Токен или ID плейлиста не предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            playlist = YouTubePlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
+            if not playlist:
+                return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+
+            youtube_client = YouTubeMusicAPI(token)
+            tracks = youtube_client.get_playlist_tracks(kind=None, playlist_id=playlist_id)
+
+            for track in tracks:
+                YouTubePlaylistTracks.objects.update_or_create(
+                    playlist=playlist,
+                    track_id=track["id"],
+                    defaults={
+                        "title": track["title"],
+                        "artist": track["artist"],
+                        "album": "Unknown",
+                        "duration": 0 
+                    }
+                )
+
+            return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 
 class PlaylistTransferViewSet(viewsets.ViewSet):
 

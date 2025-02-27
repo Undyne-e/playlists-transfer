@@ -21,7 +21,7 @@ const GoogleCallback = () => {
         .then(response => {
           console.log('Токен получен:', response.data);
           localStorage.setItem('google_token', response.data.google_token);
-          navigate("/home"); 
+          navigate("/youtube/saveplaylists"); 
 
         })
         .catch(error => {

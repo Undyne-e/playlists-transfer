@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import GoogleCallback from './pages/Google/GoogleCallback';
 import YandexSavePlaylists from './pages/Yandex/YandexSavePlaylists';
 import PlaylistTransfer from './pages/PlaylistTransfer';
+import YoutubeSavePlaylists from './pages/Google/YoutubeSavePlaylists';
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
         <Route path="/googlecallback" element={<GoogleCallback />} />
         <Route path="/yandex/saveplaylists" element={<YandexSavePlaylists />} />
         <Route path="/playlisttransfer" element={<PlaylistTransfer />} />
+        <Route path="/youtube/saveplaylists" element={<YoutubeSavePlaylists />} />
       </Routes>
     </Router>
   );
