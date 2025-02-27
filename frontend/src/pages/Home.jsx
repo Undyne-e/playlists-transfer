@@ -33,7 +33,7 @@ const Home = () => {
       <div className="flex-1 bg-gray-700 flex flex-col items-center justify-center">
         {/* Контейнер для кнопок входа */}
         <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96 space-y-4">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Выбор музыкального сервиса</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Скачать плейлист из:</h2>
           {/* Кнопка входа через Google */}
           <button
             onClick={handleGoogleLogin}

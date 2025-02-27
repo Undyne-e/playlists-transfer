@@ -9,6 +9,7 @@ import Logout from './pages/Logout';
 import DeleteAccount from './pages/DeleteAccount';
 import Home from './pages/Home';
 import GoogleCallback from './pages/Google/GoogleCallback';
+import YandexSavePlaylists from './pages/Yandex/YandexSavePlaylists';
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="/deleteaccount" element={<DeleteAccount />} />
         <Route path="/home" element={<Home />} />
         <Route path="/googlecallback" element={<GoogleCallback />} />
+        <Route path="/yandex/saveplaylists" element={<YandexSavePlaylists />} />
       </Routes>
     </Router>
   );

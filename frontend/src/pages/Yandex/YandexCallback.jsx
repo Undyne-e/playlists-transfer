@@ -26,7 +26,7 @@ export default function YandexCallback() {
             .then(data => {
                 console.log('Токен получен:', data);
                 localStorage.setItem('yandex_token', data.yandex_token);
-                navigate("/home"); 
+                navigate("/yandex/saveplaylists"); 
             })
             .catch(error => console.error("Ошибка запроса:", error));
         } else {

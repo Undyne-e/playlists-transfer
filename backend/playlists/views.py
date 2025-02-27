@@ -44,6 +44,7 @@ class YandexSavePlaylistsView(APIView):
 
                 saved_playlists.append({
                     "yandex_playlist_uuid": your_playlist.playlist_uuid,
+                    "user_id": user.id,
                     "title": your_playlist.title,
                     "track_count": your_playlist.track_count
                 })
@@ -63,6 +64,7 @@ class YandexSaveTracksView(APIView):
 
         token = request.data.get('yandex_token')
         playlist_uuid = request.data.get('yandex_playlist_uuid')
+        user_id = request.data.get('user_id')
         user = request.user
 
         if not token or not playlist_uuid: Response({'error': 'токен или uuid плейлиста не были предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
