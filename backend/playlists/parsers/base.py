@@ -3,17 +3,12 @@ from abc import ABC, abstractmethod
 class BaseMusicAPI(ABC):
 
     @abstractmethod
-    def authenticate(self, token: str):
-        """Авторизация через OAuth-токен."""
-        pass
-
-    @abstractmethod
     def get_playlists(self):
         """Получение списка плейлистов пользователя."""
         pass
 
     @abstractmethod
-    def get_playlist_tracks(self, playlist_id: str):
+    def get_playlist_tracks(self, kind: int, playlist_id: str):
         """Получение треков из плейлиста."""
         pass
 

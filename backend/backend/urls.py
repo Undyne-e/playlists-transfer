@@ -23,4 +23,5 @@ urlpatterns = [
     path('api/v1/auth/', include('djoser.urls')),
     re_path('api/v1/auth/', include('djoser.urls.authtoken')),
     path("", include("users.urls")),
+    path("api/v1/", include("playlists.urls")),
 ]
