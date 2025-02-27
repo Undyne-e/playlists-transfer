@@ -13,11 +13,15 @@ class BaseMusicAPI(ABC):
         pass
 
     @abstractmethod
-    def create_playlist(self, name: str, description: str):
+    def create_playlist(self, title: str):
         """Создание нового плейлиста."""
         pass
 
     @abstractmethod
-    def add_tracks_to_playlist(self, playlist_id: str, tracks: list):
+    def search_track(self, artist: str, title: str):
+        pass
+
+    @abstractmethod
+    def add_tracks_to_playlist(self, kind: int, track_id: int, album_id: int):
         """Добавление треков в плейлист."""
         pass

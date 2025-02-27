@@ -16,8 +16,24 @@ class YandexMusicAPI(BaseMusicAPI):
         tracks = playlist.tracks
         return tracks
 
-    def create_playlist(self, name: str, description: str):
-        pass
+    def create_playlist(self, title: str):
+        playlist = self.client.users_playlists_create(title=title)
+        return playlist
+    
+    def search_track(self, artist: str, title: str):
+        result = self.client.search(f"{artist} - {title}", type_="track")
 
-    def add_tracks_to_playlist(self, playlist_id: str, tracks: list):
-        pass
+        if result.tracks and result.tracks.results:
+            best_match = result.tracks.results[0]
+            track_id = best_match.id
+            album_id = best_match.albums[0].id if best_match.albums else None
+
+            return track_id, album_id
+
+        return None, None
+
+
+    def add_tracks_to_playlist(self, kind: int, track_id: int, album_id: int):
+        playlist = self.client.users_playlists(kind=kind)
+        response = playlist.insert_track(track_id=track_id, album_id=album_id)
+        return response

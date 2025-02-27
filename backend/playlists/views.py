@@ -4,6 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer
 
 #yandex
 import yandex_music
@@ -92,4 +95,54 @@ class YandexSaveTracksView(APIView):
             return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class PlaylistTransferViewSet(viewsets.ViewSet):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated] 
+    
+    @action(detail=False, methods=["post"])
+    def transfer(self, request):
+        
+        serializer = PlaylistTransferSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        source_platform = serializer.validated_data["source_platform"]
+        target_platform = serializer.validated_data["target_platform"]
+        playlist_uuid = serializer.validated_data["playlist_uuid"]
+
+        if source_platform == 'yandex_music':
+            try:
+                playlist = YandexPlaylists.objects.get(playlist_uuid=playlist_uuid)
+                tracks = list(YandexPlaylistTracks.objects.filter(playlist=playlist))
+                tracks = YandexPlaylistTracksSerializer(tracks, many=True).data
+            except YandexPlaylists.DoesNotExist:
+                return Response({"error": "Плейлист не найден"}, status=404)
+            
+        #другие сервисы...
+
+
+
+        if target_platform == 'yandex_music':
+            token = request.data.get('yandex_token')
+
+            if not token:
+                return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            yandex_client = YandexMusicAPI(token)
+            new_playlist = yandex_client.create_playlist(title=playlist.title)
+            unsuccessful_cnt = 0
+
+            for track in tracks:
+                new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
+                if new_track_id and new_album_id: yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
+                else: unsuccessful_cnt+=1
+            
+            return Response({
+                "message": "Плейлист перенесён",
+                "not transferred tracks": unsuccessful_cnt
+            })
+
+
 
