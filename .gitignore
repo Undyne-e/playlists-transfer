@@ -23,6 +23,7 @@ db.sqlite3
 /media/
 /staticfiles/
 /static/
+migrations/
 
 # Environments
 *.env
