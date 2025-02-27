@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaArrowRight } from 'react-icons/fa';
 
 const Home = () => {
   // Функции для обработки входа
@@ -31,23 +31,35 @@ const Home = () => {
       </div>
       {/* Основное окно */}
       <div className="flex-1 bg-gray-700 flex flex-col items-center justify-center">
-        {/* Контейнер для кнопок входа */}
-        <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96 space-y-4">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Скачать плейлист из:</h2>
-          {/* Кнопка входа через Google */}
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+        {/* Контейнер для кнопок входа и новой кнопки */}
+        <div className="flex items-center space-x-8">
+          {/* Контейнер для кнопок сервисов */}
+          <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96 space-y-4">
+            <h2 className="text-2xl font-bold text-white text-center mb-6">Загрузить плейлист из:</h2>
+            {/* Кнопка входа через Google */}
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+            >
+              YouTube music
+            </button>
+            {/* Кнопка входа через Yandex */}
+            <button
+              onClick={handleYandexLogin}
+              className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
+            >
+              Yandex music
+            </button>
+          </div>
+          {/* Стрелочка */}
+          <FaArrowRight className="text-white text-2xl" />
+          {/* Новая кнопка для перехода на /playlisttransfer */}
+          <Link
+            to="/playlisttransfer"
+            className="bg-red-500 text-white py-2 px-6 rounded-lg hover:bg-red-600 transition flex items-center justify-center text-lg"
           >
-            YouTube music
-          </button>
-          {/* Кнопка входа через Yandex */}
-          <button
-            onClick={handleYandexLogin}
-            className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
-          >
-            Yandex music
-          </button>
+            Перенести плейлист
+          </Link>
         </div>
       </div>
     </div>

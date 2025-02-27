@@ -49,7 +49,8 @@ class YandexSavePlaylistsView(APIView):
                     "yandex_playlist_uuid": your_playlist.playlist_uuid,
                     "user_id": user.id,
                     "title": your_playlist.title,
-                    "track_count": your_playlist.track_count
+                    "track_count": your_playlist.track_count,
+                    "source_platform": "yandex_music"
                 })
 
             return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)

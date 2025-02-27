@@ -10,6 +10,7 @@ import DeleteAccount from './pages/DeleteAccount';
 import Home from './pages/Home';
 import GoogleCallback from './pages/Google/GoogleCallback';
 import YandexSavePlaylists from './pages/Yandex/YandexSavePlaylists';
+import PlaylistTransfer from './pages/PlaylistTransfer';
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/googlecallback" element={<GoogleCallback />} />
         <Route path="/yandex/saveplaylists" element={<YandexSavePlaylists />} />
+        <Route path="/playlisttransfer" element={<PlaylistTransfer />} />
       </Routes>
     </Router>
   );
