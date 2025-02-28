@@ -36,8 +36,6 @@ class YouTubeMusicAPI(BaseMusicAPI):
 
             for item in items:
                 snippet = item.get("snippet", {})
-                print(snippet)
-                print()
                 if not snippet:
                     continue  # Если snippet нет, пропускаем элемент
 

@@ -5,9 +5,9 @@ const YoutubeSavePlaylists = () => {
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [downloadedPlaylists, setDownloadedPlaylists] = useState([]); // Храним скачанные плейлисты
-  const djoserToken = localStorage.getItem('access_token');
-  const googleToken = localStorage.getItem('google_token');
+  const [downloadedPlaylists, setDownloadedPlaylists] = useState([]); // Для хранения скачанных плейлистов
+  const djoserToken = localStorage.getItem("access_token");
+  const googleToken = localStorage.getItem("google_token");
   const navigate = useNavigate(); // Хук для навигации
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const YoutubeSavePlaylists = () => {
     fetchPlaylists();
   }, [djoserToken, googleToken]);
 
-  const saveTracks = async (youtubePlaylistId) => {
+  const saveTracks = async (youtube_playlist_id) => {
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/youtube/save_playlists/", {
         method: "POST",
@@ -49,7 +49,7 @@ const YoutubeSavePlaylists = () => {
         },
         body: JSON.stringify({
           google_token: googleToken,
-          youtube_playlist_id: youtubePlaylistId,
+          youtube_playlist_id: youtube_playlist_id,
         }),
       });
 
@@ -61,7 +61,7 @@ const YoutubeSavePlaylists = () => {
       console.log("Треки сохранены:", data);
 
       // Добавляем скачанный плейлист в состояние
-      setDownloadedPlaylists((prev) => [...prev, youtubePlaylistId]);
+      setDownloadedPlaylists((prev) => [...prev, youtube_playlist_id]);
     } catch (err) {
       console.error("Ошибка:", err);
     }
@@ -82,7 +82,7 @@ const YoutubeSavePlaylists = () => {
           <ul className="space-y-4">
             {playlists.map((playlist) => (
               <li
-                key={playlist.youtube_playlist_id}
+                key={`${playlist.youtube_playlist_id}-${playlist.user_id}`} 
                 className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
               >
                 <div className="text-white">
@@ -91,7 +91,7 @@ const YoutubeSavePlaylists = () => {
                 </div>
                 <div className="flex items-center">
                   {downloadedPlaylists.includes(playlist.youtube_playlist_id) && (
-                    <span className="text-green-500 mr-2">✔️</span> // Галочка, если плейлист скачан
+                    <span className="text-green-500 mr-2">✔️</span> 
                   )}
                   <button
                     onClick={() => saveTracks(playlist.youtube_playlist_id)}

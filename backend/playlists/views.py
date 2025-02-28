@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer
+from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer
 
 #yandex
 import yandex_music
@@ -117,7 +117,6 @@ class YouTubeSavePlaylistsView(APIView):
         try:
             youtube_client = YouTubeMusicAPI(token)
             playlists = youtube_client.get_playlists()
-            print(playlists[0])
 
             saved_playlists = []
             for playlist in playlists:
@@ -196,37 +195,75 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
         target_platform = serializer.validated_data["target_platform"]
         playlist_uuid = serializer.validated_data["playlist_uuid"]
 
-        if source_platform == 'yandex_music':
+        # 1️ Получаем треки из YouTube Music
+        if source_platform == 'youtube_music':
+            try:
+                playlist = YouTubePlaylists.objects.get(playlist_id=playlist_uuid)
+                tracks = list(YouTubePlaylistTracks.objects.filter(playlist=playlist))
+                tracks = [{"artist": t.artist, "title": t.title, "id": t.track_id} for t in tracks]
+            except YouTubePlaylists.DoesNotExist:
+                return Response({"error": "Плейлист не найден"}, status=404)
+
+        # 2️ Получаем треки из Яндекс Музыки (оставляем без изменений)
+        elif source_platform == 'yandex_music':
             try:
                 playlist = YandexPlaylists.objects.get(playlist_uuid=playlist_uuid)
                 tracks = list(YandexPlaylistTracks.objects.filter(playlist=playlist))
                 tracks = YandexPlaylistTracksSerializer(tracks, many=True).data
             except YandexPlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
-            
-        #другие сервисы...
+
+        else:
+            return Response({"error": "Неизвестный источник"}, status=400)
 
 
-
-        if target_platform == 'yandex_music':
-            token = request.data.get('yandex_token')
-
+        # 3️ Переносим в YouTube Music
+        if target_platform == 'youtube_music':
+            token = request.data.get('youtube_token')
             if not token:
                 return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+            youtube_client = YouTubeMusicAPI(token)
+            new_playlist_id = youtube_client.create_playlist(title=playlist.title)
+            unsuccessful_cnt = 0
+
+            for track in tracks:
+                track_id = youtube_client.search_track(artist=track["artist"], title=track["title"])
+                if track_id:
+                    youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id)
+                else:
+                    unsuccessful_cnt += 1
+
+            return Response({
+                "message": "Плейлист перенесён",
+                "not transferred tracks": unsuccessful_cnt
+            })
+
+        # 4️ Переносим в Яндекс Музыку (оставляем без изменений)
+        elif target_platform == 'yandex_music':
+            token = request.data.get('yandex_token')
+            if not token:
+                return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+
             yandex_client = YandexMusicAPI(token)
             new_playlist = yandex_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
 
             for track in tracks:
                 new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
-                if new_track_id and new_album_id: yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
-                else: unsuccessful_cnt+=1
-            
+                if new_track_id and new_album_id:
+                    yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
+                else:
+                    unsuccessful_cnt += 1
+
             return Response({
                 "message": "Плейлист перенесён",
                 "not transferred tracks": unsuccessful_cnt
             })
+
+        return Response({"error": "Неизвестная целевая платформа"}, status=400)
+
+
 
 
 
