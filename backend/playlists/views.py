@@ -212,14 +212,10 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 tracks = YandexPlaylistTracksSerializer(tracks, many=True).data
             except YandexPlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
-
-        else:
-            return Response({"error": "Неизвестный источник"}, status=400)
-
-
+            
         # 3️ Переносим в YouTube Music
         if target_platform == 'youtube_music':
-            token = request.data.get('youtube_token')
+            token = request.data.get('google_token')
             if not token:
                 return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
 
