@@ -11,41 +11,59 @@ const PlaylistTransfer = () => {
 
   const djoserToken = localStorage.getItem("access_token");
   const YandexToken = localStorage.getItem("yandex_token");
+  const YouTubeToken = localStorage.getItem("google_token");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/v1/yandex/get_playlists/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Token ${djoserToken}`,
-      },
-      body: JSON.stringify({ yandex_token: YandexToken }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Ответ API:", data);
-        setPlaylists(Array.isArray(data.playlists) ? data.playlists : []); // Берём массив
+    const fetchPlaylists = async () => {
+      try {
+        const yandexRes = await fetch("http://127.0.0.1:8000/api/v1/yandex/get_playlists/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${djoserToken}`,
+          },
+          body: JSON.stringify({ yandex_token: YandexToken }),
+        });
+        const yandexData = await yandexRes.json();
+        
+        const youtubeRes = await fetch("http://127.0.0.1:8000/api/v1/youtube/get_playlists/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${djoserToken}`,
+          },
+          body: JSON.stringify({ google_token: YouTubeToken }),
+        });
+        const youtubeData = await youtubeRes.json();
+
+        const yandexPlaylists = Array.isArray(yandexData.playlists) ? yandexData.playlists.map(pl => ({
+          value: pl.yandex_playlist_uuid,
+          label: `${pl.title} (${pl.track_count} треков) - Яндекс Музыка`,
+          source_platform: "yandex_music",
+        })) : [];
+
+        const youtubePlaylists = Array.isArray(youtubeData.playlists) ? youtubeData.playlists.map(pl => ({
+          value: pl.youtube_playlist_id,
+          label: `${pl.title} (${pl.track_count} треков) - YouTube Music`,
+          source_platform: "youtube_music",
+        })) : [];
+
+        setPlaylists([...yandexPlaylists, ...youtubePlaylists]);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Ошибка загрузки плейлистов:", err);
         setError("Ошибка загрузки плейлистов.");
         setLoading(false);
-      });
+      }
+    };
+
+    fetchPlaylists();
   }, []);
-  
 
   const platformOptions = [
     { value: "yandex_music", label: "Яндекс Музыка" },
-    { value: "spotify_music", label: "Spotify" },
-    { value: "apple_music", label: "Apple Music" },
+    { value: "youtube_music", label: "YouTube Music" },
   ];
-
-  const platformLabels = {
-    yandex_music: "Яндекс Музыка",
-    spotify_music: "Spotify",
-    apple_music: "Apple Music",
-  };
 
   const handleTransfer = () => {
     if (!selectedPlaylist || !targetPlatform) {
@@ -62,10 +80,11 @@ const PlaylistTransfer = () => {
         Authorization: `Token ${djoserToken}`,
       },
       body: JSON.stringify({
-        yandex_token: YandexToken,
         source_platform: selectedPlaylist.source_platform,
         target_platform: targetPlatform.value,
         playlist_uuid: selectedPlaylist.value,
+        yandex_token: YandexToken,
+        google_token: YouTubeToken
       }),
     })
       .then((res) => res.json())
@@ -93,11 +112,7 @@ const PlaylistTransfer = () => {
         ) : (
           <div className="space-y-4">
             <Select
-              options={playlists.map((pl) => ({
-                value: pl.yandex_playlist_uuid || pl.spotify_playlist_uuid || pl.apple_playlist_uuid,
-                label: `${pl.title} (${pl.track_count} треков) - ${platformLabels[pl.source_platform]}`,
-                source_platform: pl.source_platform,
-              }))}
+              options={playlists}
               onChange={setSelectedPlaylist}
               placeholder="Выберите плейлист"
               className="mb-4 text-black"
