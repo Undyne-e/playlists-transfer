@@ -195,7 +195,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
         target_platform = serializer.validated_data["target_platform"]
         playlist_uuid = serializer.validated_data["playlist_uuid"]
 
-        # 1️ Получаем треки из YouTube Music
+        # Получаем треки из YouTube Music
         if source_platform == 'youtube_music':
             try:
                 playlist = YouTubePlaylists.objects.get(playlist_id=playlist_uuid)
@@ -204,7 +204,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             except YouTubePlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
 
-        # 2️ Получаем треки из Яндекс Музыки (оставляем без изменений)
+        # Получаем треки из Яндекс Музыки (оставляем без изменений)
         elif source_platform == 'yandex_music':
             try:
                 playlist = YandexPlaylists.objects.get(playlist_uuid=playlist_uuid)
@@ -213,7 +213,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             except YandexPlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
             
-        # 3️ Переносим в YouTube Music
+        # Переносим в YouTube Music
         if target_platform == 'youtube_music':
             token = request.data.get('google_token')
             if not token:
@@ -226,7 +226,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             for track in tracks:
                 track_id = youtube_client.search_track(artist=track["artist"], title=track["title"])
                 if track_id:
-                    youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id)
+                    youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id, kind=None)
                 else:
                     unsuccessful_cnt += 1
 
@@ -235,7 +235,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 "not transferred tracks": unsuccessful_cnt
             })
 
-        # 4️ Переносим в Яндекс Музыку (оставляем без изменений)
+        # Переносим в Яндекс Музыку (оставляем без изменений)
         elif target_platform == 'yandex_music':
             token = request.data.get('yandex_token')
             if not token:

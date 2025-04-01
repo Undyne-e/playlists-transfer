@@ -100,7 +100,11 @@ class GoogleOAuthCallbackView(View):
 
             # Настройка OAuth-потока
             CLIENT_SECRETS_FILE = './client_secret.json'
-            SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
+            SCOPES = [
+                'https://www.googleapis.com/auth/youtube.readonly',
+                'https://www.googleapis.com/auth/youtube.force-ssl',
+            ]
+
             flow = Flow.from_client_secrets_file(
                 CLIENT_SECRETS_FILE,
                 scopes=SCOPES,

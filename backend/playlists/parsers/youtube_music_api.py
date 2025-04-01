@@ -88,7 +88,7 @@ class YouTubeMusicAPI(BaseMusicAPI):
                     "playlistId": playlist_id,
                     "resourceId": {
                         "kind": "youtube#video",
-                        "videoId": track_id
+                        "videoId": track_id["id"]["videoId"]
                     }
                 }
             }

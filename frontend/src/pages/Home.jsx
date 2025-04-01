@@ -7,7 +7,7 @@ const Home = () => {
   const handleGoogleLogin = () => {
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const REDIRECT_URI = 'http://localhost:5173/googlecallback';
-    const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+    const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl';
     const AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&access_type=offline`;
     window.location.href = AUTH_URL;
   };
