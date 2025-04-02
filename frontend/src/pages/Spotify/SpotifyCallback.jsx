@@ -1,11 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 
 const SpotifyCallback = () => {
   const navigate = useNavigate();
+  const hasFetched = useRef(false); // Флаг, предотвращающий повторный запрос
 
   useEffect(() => {
+
+    if (hasFetched.current) return; // Если уже запрашивали, выходим
+        hasFetched.current = true; // Устанавливаем флаг
+
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
 

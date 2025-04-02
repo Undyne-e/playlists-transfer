@@ -27,4 +27,14 @@ class GoogleToken(models.Model):
 
     def __str__(self):
         return f"Google Token for {self.user.username}"
+    
+class SpotifyToken(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='spotify_token')
+    access_token = models.TextField()
+    refresh_token = models.TextField(blank=True, null=True)
+    expires_in = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Spotify Token for {self.user.username}"
+    
 
