@@ -125,7 +125,6 @@ class YouTubeSavePlaylistsView(APIView):
                     playlist_id=playlist['id'],
                     defaults={  
                         "title": playlist['snippet']['title'],
-                        #"track_count": playlist['contentDetails']['itemCount']
                     }
                 )
 

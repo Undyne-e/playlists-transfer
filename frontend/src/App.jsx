@@ -13,6 +13,7 @@ import YandexSavePlaylists from './pages/Yandex/YandexSavePlaylists';
 import PlaylistTransfer from './pages/PlaylistTransfer';
 import YoutubeSavePlaylists from './pages/Google/YoutubeSavePlaylists';
 import SpotifyCallback from './pages/Spotify/SpotifyCallback';
+import SpotifySavePlaylists from './pages/Spotify/SpotifySavePlaylists';
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/spotifycallback" element={<SpotifyCallback />} />
         <Route path="/yandex/saveplaylists" element={<YandexSavePlaylists />} />
         <Route path="/youtube/saveplaylists" element={<YoutubeSavePlaylists />} />
+        <Route path="/spotify/saveplaylists" element={<SpotifySavePlaylists />} />
         <Route path="/playlisttransfer" element={<PlaylistTransfer />} />
       </Routes>
     </Router>

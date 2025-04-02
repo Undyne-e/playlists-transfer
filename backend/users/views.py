@@ -186,7 +186,6 @@ class SpotifyOAuthCallbackView(APIView):
                 }
             )
 
-            print(1)
             return Response({"message": "Token saved successfully!", 'spotify_token': access_token})
 
         return Response(response_data, status=400)
