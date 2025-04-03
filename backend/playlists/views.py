@@ -19,7 +19,7 @@ from .models import YouTubePlaylists, YouTubePlaylistTracks
 
 #spotify
 from .parsers.spotify_api import SpotifyAPI
-from .models import SpotifyPlaylists
+from .models import SpotifyPlaylists, SpotifyPlaylistTracks
 
 
 class YandexSavePlaylistsView(APIView):
@@ -76,7 +76,6 @@ class YandexSaveTracksView(APIView):
 
         token = request.data.get('yandex_token')
         playlist_uuid = request.data.get('yandex_playlist_uuid')
-        user_id = request.data.get('user_id')
         user = request.user
 
         if not token or not playlist_uuid: Response({'error': 'токен или uuid плейлиста не были предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
@@ -221,6 +220,43 @@ class SpotifySavePlaylistsView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+
+
+class SpotifySaveTracksView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated] 
+
+    def post(self, request):
+        token = request.data.get('spotify_token')
+        playlist_id = request.data.get('spotify_playlist_id')
+        user = request.user
+
+        if not token or not playlist_id:
+            return Response({'error': 'Токен или ID плейлиста не предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            playlist = SpotifyPlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
+            if not playlist:
+                return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            spotify_client = SpotifyAPI(token)
+            tracks = spotify_client.get_playlist_tracks(kind=None, playlist_id=playlist_id, track_count=playlist.track_count)
+
+            for track in tracks:
+                SpotifyPlaylistTracks.objects.update_or_create(
+                    playlist = playlist,
+                    track_id=track["id"],
+                    defaults={
+                        "title": track["title"],
+                        "artist": track["artist"],
+                        "album": track["album"],
+                        "duration": track["duration"]
+                    }
+                )
+            return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PlaylistTransferViewSet(viewsets.ViewSet):

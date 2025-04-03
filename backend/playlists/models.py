@@ -68,3 +68,19 @@ class SpotifyPlaylists(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.title}"
+    
+
+class SpotifyPlaylistTracks(models.Model):
+    playlist = models.ForeignKey(SpotifyPlaylists, related_name='tracks', on_delete=models.CASCADE)  
+    track_id = models.CharField(max_length=255)  # ID трека в YouTube
+    title = models.CharField(max_length=255)
+    artist = models.CharField(max_length=255)
+    album = models.CharField(max_length=255, blank=True, null=True, default="Unknown")
+    duration = models.IntegerField(help_text="Длительность в секундах", blank=True, null=True)
+
+    class Meta:
+        unique_together = ('playlist', 'track_id')
+
+    def __str__(self):
+        return f"{self.title} - {self.artist}"
+

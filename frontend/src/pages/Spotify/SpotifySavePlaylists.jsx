@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom"; // Для навигации
 
 const SpotifySavePlaylists = () => {
@@ -9,8 +9,13 @@ const SpotifySavePlaylists = () => {
   const djoserToken = localStorage.getItem('access_token');
   const SpotifyToken = localStorage.getItem('spotify_token');
   const navigate = useNavigate(); // Хук для навигации
+  const hasFetched = useRef(false); // Флаг, предотвращающий повторный запрос
 
   useEffect(() => {
+
+    if (hasFetched.current) return; // Если уже запрашивали, выходим
+        hasFetched.current = true; // Устанавливаем флаг
+
     const fetchPlaylists = async () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/api/v1/spotify/get_playlists/", {
@@ -39,7 +44,7 @@ const SpotifySavePlaylists = () => {
     fetchPlaylists();
   }, [djoserToken, SpotifyToken]);
 
-  const saveTracks = async (spotify_playlist_uuid) => {
+  const saveTracks = async (spotify_playlist_id) => {
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/spotify/save_playlists/", {
         method: "POST",
@@ -49,7 +54,7 @@ const SpotifySavePlaylists = () => {
         },
         body: JSON.stringify({
           spotify_token: SpotifyToken,
-          spotify_playlist_uuid: spotify_playlist_uuid,
+          spotify_playlist_id: spotify_playlist_id,
         }),
       });
 
@@ -61,7 +66,7 @@ const SpotifySavePlaylists = () => {
       console.log("Треки сохранены:", data);
 
       // Добавляем скачанный плейлист в состояние
-      setDownloadedPlaylists((prev) => [...prev, spotify_playlist_uuid]);
+      setDownloadedPlaylists((prev) => [...prev, spotify_playlist_id]);
     } catch (err) {
       console.error("Ошибка:", err);
     }
@@ -82,7 +87,7 @@ const SpotifySavePlaylists = () => {
           <ul className="space-y-4">
             {playlists.map((playlist) => (
               <li
-                key={`${playlist.spotify_playlist_uuid}-${playlist.user_id}`}
+                key={`${playlist.spotify_playlist_id}-${playlist.user_id}`}
                 className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
               >
                 <div className="text-white">
@@ -90,13 +95,13 @@ const SpotifySavePlaylists = () => {
                   <p className="text-sm text-gray-400">{playlist.track_count} треков</p>
                 </div>
                 <div className="flex items-center">
-                  {downloadedPlaylists.includes(playlist.spotify_playlist_uuid) && (
+                  {downloadedPlaylists.includes(playlist.spotify_playlist_id) && (
                     <span className="text-green-500 mr-2">✔️</span> // Галочка, если плейлист скачан
                   )}
                   <button
-                    onClick={() => saveTracks(playlist.spotify_playlist_uuid)}
+                    onClick={() => saveTracks(playlist.spotify_playlist_id)}
                     className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
-                    disabled={downloadedPlaylists.includes(playlist.spotify_playlist_uuid)} // Делаем кнопку неактивной, если плейлист уже скачан
+                    disabled={downloadedPlaylists.includes(playlist.spotify_playlist_id)} // Делаем кнопку неактивной, если плейлист уже скачан
                   >
                     Загрузить треки
                   </button>
