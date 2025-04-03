@@ -17,6 +17,10 @@ from .models import YandexPlaylists, YandexPlaylistTracks
 from .parsers.youtube_music_api import YouTubeMusicAPI
 from .models import YouTubePlaylists, YouTubePlaylistTracks
 
+#spotify
+from .parsers.spotify_api import SpotifyAPI
+from .models import SpotifyPlaylists
+
 
 class YandexSavePlaylistsView(APIView):
 
@@ -179,6 +183,46 @@ class YouTubeSaveTracksView(APIView):
         
 
 
+class SpotifySavePlaylistsView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]  
+
+    def post(self, request):
+        token = request.data.get('spotify_token')
+        user = request.user
+
+        if not token:
+            return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            spotify_client = SpotifyAPI(token)
+            playlists = spotify_client.get_playlists()
+
+            saved_playlists = []
+            for playlist in playlists:
+                playlist_obj, created = SpotifyPlaylists.objects.update_or_create(
+                    user=user,
+                    playlist_id=playlist['playlist_id'],
+                    defaults={  
+                        "title": playlist['title'],
+                        "track_count": playlist['track_count']
+                    }
+                )
+
+                saved_playlists.append({
+                    "spotify_playlist_id": playlist_obj.playlist_id,
+                    "user_id": user.id,
+                    "title": playlist_obj.title,
+                    "track_count": playlist_obj.track_count,
+                    "source_platform": "spotify",
+                })
+            return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
 class PlaylistTransferViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
@@ -257,7 +301,6 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             })
 
         return Response({"error": "Неизвестная целевая платформа"}, status=400)
-
 
 
 
