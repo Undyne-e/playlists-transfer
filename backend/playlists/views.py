@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer
+from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer, SpotifyPlaylistTracksSerializer
 
 #yandex
 import yandex_music
@@ -259,6 +259,7 @@ class SpotifySaveTracksView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 class PlaylistTransferViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
@@ -283,13 +284,22 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             except YouTubePlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
 
-        # Получаем треки из Яндекс Музыки (оставляем без изменений)
+        # Получаем треки из Яндекс Музыки
         elif source_platform == 'yandex_music':
             try:
                 playlist = YandexPlaylists.objects.get(playlist_uuid=playlist_uuid)
                 tracks = list(YandexPlaylistTracks.objects.filter(playlist=playlist))
                 tracks = YandexPlaylistTracksSerializer(tracks, many=True).data
             except YandexPlaylists.DoesNotExist:
+                return Response({"error": "Плейлист не найден"}, status=404)
+        
+        # Получаем треки из Spotify
+        elif source_platform == 'spotify':
+            try:
+                playlist = SpotifyPlaylists.objects.get(playlist_id=playlist_uuid)
+                tracks = list(SpotifyPlaylistTracks.objects.filter(playlist=playlist))
+                tracks = SpotifyPlaylistTracksSerializer(tracks, many=True).data
+            except SpotifyPlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
             
         # Переносим в YouTube Music
@@ -314,7 +324,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 "not transferred tracks": unsuccessful_cnt
             })
 
-        # Переносим в Яндекс Музыку (оставляем без изменений)
+        # Переносим в Яндекс Музыку
         elif target_platform == 'yandex_music':
             token = request.data.get('yandex_token')
             if not token:
@@ -328,6 +338,28 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
                 if new_track_id and new_album_id:
                     yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
+                else:
+                    unsuccessful_cnt += 1
+
+            return Response({
+                "message": "Плейлист перенесён",
+                "not transferred tracks": unsuccessful_cnt
+            })
+        
+        # Переносим в Spotify
+        elif target_platform == 'spotify':
+            token = request.data.get('spotify_token')
+            if not token:
+                return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+
+            spotify_client = SpotifyAPI(token)
+            new_playlist = spotify_client.create_playlist(title=playlist.title)
+            unsuccessful_cnt = 0
+
+            for track in tracks:
+                new_track_id = spotify_client.search_track(artist=track['artist'], title=track['title'])
+                if new_track_id:
+                    spotify_client.add_tracks_to_playlist(kind=new_playlist, track_id=new_track_id, album_id=None)
                 else:
                     unsuccessful_cnt += 1
 

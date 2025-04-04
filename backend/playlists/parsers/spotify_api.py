@@ -56,16 +56,51 @@ class SpotifyAPI(BaseMusicAPI):
         return items
 
 
-
-
-
     def create_playlist(self, title: str):
         """Создание нового плейлиста."""
-        pass
+        url = 'https://api.spotify.com/v1/me'
+        headers = {'Authorization': f'Bearer {self.token}'}
+        uid = requests.get(url=url, headers=headers).json()["id"]
+
+        url = f'https://api.spotify.com/v1/users/{uid}/playlists'
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "name": title,
+            "description": "Создано через API",
+        }
+        playlist_id = requests.post(url=url, headers=headers, json=data).json()["id"]
+        return playlist_id
+
+
 
     def search_track(self, artist: str, title: str):
-        pass
+        """Поиск трека."""
+        url = "https://api.spotify.com/v1/search"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        params = {
+            "q": f"track:{title} artist:{artist}",
+            "type": "track",
+            "limit": 1
+        }   
+        response_data = requests.get(url, headers=headers, params=params).json()
+        tracks = response_data.get("tracks", {}).get("items", [])
+        if tracks: return tracks[0]["id"]
+        return None
 
-    def add_tracks_to_playlist(self, kind: int, track_id: int, album_id: int):
+
+
+
+    def add_tracks_to_playlist(self, kind: str, track_id: str, album_id: int):
         """Добавление треков в плейлист."""
-        pass
+        url = f'https://api.spotify.com/v1/playlists/{kind}/tracks'
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json',
+        }
+        uris = [f'spotify:track:{track_id}']
+        data = {"uris": uris}
+        response = requests.post(url=url, headers=headers, json=data)
+        return response
