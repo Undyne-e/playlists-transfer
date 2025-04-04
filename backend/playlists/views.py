@@ -326,7 +326,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             unsuccessful_cnt = 0
             not_transferred = []
 
-            for track in tracks:
+            for track in tracks[::-1]:
                 track_id = youtube_client.search_track(artist=track["artist"], title=track["title"])
                 if track_id:
                     youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id, kind=None)
@@ -354,7 +354,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             unsuccessful_cnt = 0
             not_transferred = []
 
-            for track in tracks:
+            for track in tracks[::-1]:
                 new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
                 if new_track_id and new_album_id:
                     yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
