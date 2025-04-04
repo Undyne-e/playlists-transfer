@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer
+from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer, SpotifyPlaylistTracksSerializer
 
 #yandex
 import yandex_music
@@ -16,6 +16,10 @@ from .models import YandexPlaylists, YandexPlaylistTracks
 #google
 from .parsers.youtube_music_api import YouTubeMusicAPI
 from .models import YouTubePlaylists, YouTubePlaylistTracks
+
+#spotify
+from .parsers.spotify_api import SpotifyAPI
+from .models import SpotifyPlaylists, SpotifyPlaylistTracks
 
 
 class YandexSavePlaylistsView(APIView):
@@ -72,7 +76,6 @@ class YandexSaveTracksView(APIView):
 
         token = request.data.get('yandex_token')
         playlist_uuid = request.data.get('yandex_playlist_uuid')
-        user_id = request.data.get('user_id')
         user = request.user
 
         if not token or not playlist_uuid: Response({'error': 'токен или uuid плейлиста не были предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
@@ -125,7 +128,6 @@ class YouTubeSavePlaylistsView(APIView):
                     playlist_id=playlist['id'],
                     defaults={  
                         "title": playlist['snippet']['title'],
-                        #"track_count": playlist['contentDetails']['itemCount']
                     }
                 )
 
@@ -180,6 +182,84 @@ class YouTubeSaveTracksView(APIView):
         
 
 
+class SpotifySavePlaylistsView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]  
+
+    def post(self, request):
+        token = request.data.get('spotify_token')
+        user = request.user
+
+        if not token:
+            return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            spotify_client = SpotifyAPI(token)
+            playlists = spotify_client.get_playlists()
+
+            saved_playlists = []
+            for playlist in playlists:
+                playlist_obj, created = SpotifyPlaylists.objects.update_or_create(
+                    user=user,
+                    playlist_id=playlist['playlist_id'],
+                    defaults={  
+                        "title": playlist['title'],
+                        "track_count": playlist['track_count']
+                    }
+                )
+
+                saved_playlists.append({
+                    "spotify_playlist_id": playlist_obj.playlist_id,
+                    "user_id": user.id,
+                    "title": playlist_obj.title,
+                    "track_count": playlist_obj.track_count,
+                    "source_platform": "spotify",
+                })
+            return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class SpotifySaveTracksView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated] 
+
+    def post(self, request):
+        token = request.data.get('spotify_token')
+        playlist_id = request.data.get('spotify_playlist_id')
+        user = request.user
+
+        if not token or not playlist_id:
+            return Response({'error': 'Токен или ID плейлиста не предоставлены'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            playlist = SpotifyPlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
+            if not playlist:
+                return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            spotify_client = SpotifyAPI(token)
+            tracks = spotify_client.get_playlist_tracks(kind=None, playlist_id=playlist_id, track_count=playlist.track_count)
+
+            for track in tracks:
+                SpotifyPlaylistTracks.objects.update_or_create(
+                    playlist = playlist,
+                    track_id=track["id"],
+                    defaults={
+                        "title": track["title"],
+                        "artist": track["artist"],
+                        "album": track["album"],
+                        "duration": track["duration"]
+                    }
+                )
+            return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 class PlaylistTransferViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
@@ -204,13 +284,22 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             except YouTubePlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
 
-        # Получаем треки из Яндекс Музыки (оставляем без изменений)
+        # Получаем треки из Яндекс Музыки
         elif source_platform == 'yandex_music':
             try:
                 playlist = YandexPlaylists.objects.get(playlist_uuid=playlist_uuid)
                 tracks = list(YandexPlaylistTracks.objects.filter(playlist=playlist))
                 tracks = YandexPlaylistTracksSerializer(tracks, many=True).data
             except YandexPlaylists.DoesNotExist:
+                return Response({"error": "Плейлист не найден"}, status=404)
+        
+        # Получаем треки из Spotify
+        elif source_platform == 'spotify':
+            try:
+                playlist = SpotifyPlaylists.objects.get(playlist_id=playlist_uuid)
+                tracks = list(SpotifyPlaylistTracks.objects.filter(playlist=playlist))
+                tracks = SpotifyPlaylistTracksSerializer(tracks, many=True).data
+            except SpotifyPlaylists.DoesNotExist:
                 return Response({"error": "Плейлист не найден"}, status=404)
             
         # Переносим в YouTube Music
@@ -235,7 +324,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 "not transferred tracks": unsuccessful_cnt
             })
 
-        # Переносим в Яндекс Музыку (оставляем без изменений)
+        # Переносим в Яндекс Музыку
         elif target_platform == 'yandex_music':
             token = request.data.get('yandex_token')
             if not token:
@@ -256,9 +345,30 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                 "message": "Плейлист перенесён",
                 "not transferred tracks": unsuccessful_cnt
             })
+        
+        # Переносим в Spotify
+        elif target_platform == 'spotify':
+            token = request.data.get('spotify_token')
+            if not token:
+                return Response({'error': 'Не предоставлен токен'}, status=status.HTTP_400_BAD_REQUEST)
+
+            spotify_client = SpotifyAPI(token)
+            new_playlist = spotify_client.create_playlist(title=playlist.title)
+            unsuccessful_cnt = 0
+
+            for track in tracks:
+                new_track_id = spotify_client.search_track(artist=track['artist'], title=track['title'])
+                if new_track_id:
+                    spotify_client.add_tracks_to_playlist(kind=new_playlist, track_id=new_track_id, album_id=None)
+                else:
+                    unsuccessful_cnt += 1
+
+            return Response({
+                "message": "Плейлист перенесён",
+                "not transferred tracks": unsuccessful_cnt
+            })
 
         return Response({"error": "Неизвестная целевая платформа"}, status=400)
-
 
 
 

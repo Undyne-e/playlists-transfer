@@ -19,6 +19,14 @@ const Home = () => {
     window.location.href = AUTH_URL;
   };
 
+  const handleSpotifyLogin = () => {
+    const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+    const REDIRECT_URI = 'http://localhost:5173/spotifycallback';
+    const SCOPE = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private';
+    const AUTH_URL = `https://accounts.spotify.com/authorize?response_type=code&client_id=${SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}`;
+    window.location.href = AUTH_URL;
+  }
+
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-white">
       {/* Боковая панель */}
@@ -49,6 +57,13 @@ const Home = () => {
               className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
             >
               Yandex music
+            </button>
+            {/* Кнопка входа через Spotify */}
+            <button
+              onClick={handleSpotifyLogin}
+              className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
+            >
+              Spotify
             </button>
           </div>
           {/* Стрелочка */}

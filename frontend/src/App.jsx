@@ -12,24 +12,28 @@ import GoogleCallback from './pages/Google/GoogleCallback';
 import YandexSavePlaylists from './pages/Yandex/YandexSavePlaylists';
 import PlaylistTransfer from './pages/PlaylistTransfer';
 import YoutubeSavePlaylists from './pages/Google/YoutubeSavePlaylists';
+import SpotifyCallback from './pages/Spotify/SpotifyCallback';
+import SpotifySavePlaylists from './pages/Spotify/SpotifySavePlaylists';
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/yandexcallback" element={<YandexCallback />} />
-        <Route path="/auth/activate/:uid/:token/" element={<ActivateAccount />} />
-        <Route path="/activateprompt" element={<ActivatePrompt />} />
-        <Route path="/accountsettings" element={<AccountSettings />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/deleteaccount" element={<DeleteAccount />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/deleteaccount" element={<DeleteAccount />} />
+        <Route path="/accountsettings" element={<AccountSettings />} />
+        <Route path="/activateprompt" element={<ActivatePrompt />} />
+        <Route path="/auth/activate/:uid/:token/" element={<ActivateAccount />} />
+        <Route path="/yandexcallback" element={<YandexCallback />} />
         <Route path="/googlecallback" element={<GoogleCallback />} />
+        <Route path="/spotifycallback" element={<SpotifyCallback />} />
         <Route path="/yandex/saveplaylists" element={<YandexSavePlaylists />} />
-        <Route path="/playlisttransfer" element={<PlaylistTransfer />} />
         <Route path="/youtube/saveplaylists" element={<YoutubeSavePlaylists />} />
+        <Route path="/spotify/saveplaylists" element={<SpotifySavePlaylists />} />
+        <Route path="/playlisttransfer" element={<PlaylistTransfer />} />
       </Routes>
     </Router>
   );

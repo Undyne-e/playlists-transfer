@@ -7,6 +7,9 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
 from .models import GoogleToken
 
+#spotify
+from .models import SpotifyToken
+
 #dj
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -24,6 +27,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 
 #env
+import base64
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -134,3 +138,54 @@ class GoogleOAuthCallbackView(View):
             })
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+
+class SpotifyOAuthCallbackView(APIView):
+    """Обрабатывает код от Spotify, проверяет Djoser-токен, получает access_token"""
+    
+    authentication_classes = [TokenAuthentication] 
+    permission_classes = [IsAuthenticated]  
+
+    def post(self, request):
+
+        data = json.loads(request.body)
+        code = data.get('code')
+        if not code:
+            return Response({"error": "No code provided"}, status=400)
+        
+        client_id = os.getenv('SPOTIFY_CLIENT_ID')
+        client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+
+        credentials = f"{client_id}:{client_secret}"
+        encoded_credentials = base64.b64encode(credentials.encode()).decode()
+
+        data = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": "http://localhost:5173/spotifycallback",
+        }
+
+        headers = {
+            'content-type': 'application/x-www-form-urlencoded',
+            'Authorization': f"Basic {encoded_credentials}", 
+        }
+
+        response_data = requests.post("https://accounts.spotify.com/api/token", data=data, headers=headers).json()
+
+        if "access_token" in response_data:
+            access_token = response_data["access_token"]
+            refresh_token = response_data["refresh_token"]
+            expires_in = response_data["expires_in"]
+            user = request.user
+            SpotifyToken.objects.update_or_create(
+                user = user,
+                defaults={
+                    'access_token': access_token,
+                    'refresh_token': refresh_token,
+                    'expires_in': expires_in,
+                }
+            )
+
+            return Response({"message": "Token saved successfully!", 'spotify_token': access_token})
+
+        return Response(response_data, status=400)

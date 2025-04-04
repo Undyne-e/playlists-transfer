@@ -12,10 +12,13 @@ const PlaylistTransfer = () => {
   const djoserToken = localStorage.getItem("access_token");
   const YandexToken = localStorage.getItem("yandex_token");
   const YouTubeToken = localStorage.getItem("google_token");
+  const SpotifyToken = localStorage.getItem("spotify_token")
 
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
+
+        // Плейлисты Yandex
         const yandexRes = await fetch("http://127.0.0.1:8000/api/v1/yandex/get_playlists/", {
           method: "POST",
           headers: {
@@ -26,6 +29,7 @@ const PlaylistTransfer = () => {
         });
         const yandexData = await yandexRes.json();
         
+        // Плейлисты Youtube
         const youtubeRes = await fetch("http://127.0.0.1:8000/api/v1/youtube/get_playlists/", {
           method: "POST",
           headers: {
@@ -35,6 +39,17 @@ const PlaylistTransfer = () => {
           body: JSON.stringify({ google_token: YouTubeToken }),
         });
         const youtubeData = await youtubeRes.json();
+
+        // Плейлисты Spotify
+        const spotifyRes = await fetch("http://127.0.0.1:8000/api/v1/spotify/get_playlists/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${djoserToken}`,
+          },
+          body: JSON.stringify({ spotify_token: SpotifyToken }),
+        });
+        const spotifyData = await spotifyRes.json();
 
         const yandexPlaylists = Array.isArray(yandexData.playlists) ? yandexData.playlists.map(pl => ({
           value: pl.yandex_playlist_uuid,
@@ -48,7 +63,13 @@ const PlaylistTransfer = () => {
           source_platform: "youtube_music",
         })) : [];
 
-        setPlaylists([...yandexPlaylists, ...youtubePlaylists]);
+        const spotifyPlaylists = Array.isArray(spotifyData.playlists) ? spotifyData.playlists.map(pl => ({
+          value: pl.spotify_playlist_id,
+          label: `${pl.title} (${pl.track_count} треков) - Spotify`,
+          source_platform: "spotify",
+        })) : [];
+
+        setPlaylists([...yandexPlaylists, ...youtubePlaylists, ...spotifyPlaylists]);
         setLoading(false);
       } catch (err) {
         console.error("Ошибка загрузки плейлистов:", err);
@@ -63,6 +84,7 @@ const PlaylistTransfer = () => {
   const platformOptions = [
     { value: "yandex_music", label: "Яндекс Музыка" },
     { value: "youtube_music", label: "YouTube Music" },
+    { value: "spotify", label: "Spotify" },
   ];
 
   const handleTransfer = () => {
@@ -84,7 +106,8 @@ const PlaylistTransfer = () => {
         target_platform: targetPlatform.value,
         playlist_uuid: selectedPlaylist.value,
         yandex_token: YandexToken,
-        google_token: YouTubeToken
+        google_token: YouTubeToken,
+        spotify_token: SpotifyToken,
       }),
     })
       .then((res) => res.json())
