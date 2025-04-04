@@ -10,7 +10,7 @@ class YouTubeMusicAPI(BaseMusicAPI):
 
     def get_playlists(self) -> List[Dict]:
             request = self.client.playlists().list(
-                part="snippet",
+                part="snippet,contentDetails",
                 mine=True
             )
             response = request.execute()

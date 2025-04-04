@@ -9,7 +9,6 @@ from rest_framework.decorators import action
 from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer, SpotifyPlaylistTracksSerializer
 
 #yandex
-import yandex_music
 from .parsers.yandex_music_api import YandexMusicAPI
 from .models import YandexPlaylists, YandexPlaylistTracks
 
@@ -58,6 +57,7 @@ class YandexSavePlaylistsView(APIView):
                     "user_id": user.id,
                     "title": your_playlist.title,
                     "track_count": your_playlist.track_count,
+                    "tracks_downloaded": your_playlist.tracks_downloaded,
                     "source_platform": "yandex_music"
                 })
 
@@ -84,7 +84,10 @@ class YandexSaveTracksView(APIView):
             playlist = YandexPlaylists.objects.filter(user=user, playlist_uuid=playlist_uuid).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
-            
+
+            playlist.tracks_downloaded = True
+            playlist.save()
+
             yandex_client = YandexMusicAPI(token)
             tracks = yandex_client.get_playlist_tracks(playlist.kind, playlist.uid)
 
@@ -97,7 +100,7 @@ class YandexSaveTracksView(APIView):
                             "title": track['track']['title'],
                             "artist": track['track']['artists'][0]['name'] if track['track']['artists'] else "Unknown",
                             "album": track['track']['albums'][0]['title'] if track['track']['albums'] else "Unknown",
-                            "duration": (track['track']['duration_ms'] // 1000) if track['track']['duration_ms'] else 0,
+                            "duration": (track['track']['duration_ms']) if track['track']['duration_ms'] else 0,
                         }
                     )
             return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
@@ -128,6 +131,7 @@ class YouTubeSavePlaylistsView(APIView):
                     playlist_id=playlist['id'],
                     defaults={  
                         "title": playlist['snippet']['title'],
+                        "track_count": playlist['contentDetails']['itemCount'],
                     }
                 )
 
@@ -135,6 +139,8 @@ class YouTubeSavePlaylistsView(APIView):
                     "youtube_playlist_id": playlist_obj.playlist_id,
                     "user_id": user.id,
                     "title": playlist_obj.title,
+                    "track_count": playlist_obj.track_count,
+                    "tracks_downloaded": playlist_obj.tracks_downloaded,
                     "source_platform": "youtube_music"
                 })
 
@@ -160,6 +166,9 @@ class YouTubeSaveTracksView(APIView):
             playlist = YouTubePlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            playlist.tracks_downloaded = True
+            playlist.save()
 
             youtube_client = YouTubeMusicAPI(token)
             tracks = youtube_client.get_playlist_tracks(kind=None, playlist_id=playlist_id)
@@ -214,6 +223,7 @@ class SpotifySavePlaylistsView(APIView):
                     "user_id": user.id,
                     "title": playlist_obj.title,
                     "track_count": playlist_obj.track_count,
+                    "tracks_downloaded": playlist_obj.tracks_downloaded,
                     "source_platform": "spotify",
                 })
             return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)
@@ -239,6 +249,9 @@ class SpotifySaveTracksView(APIView):
             playlist = SpotifyPlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            playlist.tracks_downloaded = True
+            playlist.save()
             
             spotify_client = SpotifyAPI(token)
             tracks = spotify_client.get_playlist_tracks(kind=None, playlist_id=playlist_id, track_count=playlist.track_count)
@@ -311,17 +324,23 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             youtube_client = YouTubeMusicAPI(token)
             new_playlist_id = youtube_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
-            for track in tracks:
+            for track in tracks[::-1]:
                 track_id = youtube_client.search_track(artist=track["artist"], title=track["title"])
                 if track_id:
                     youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id, kind=None)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
 
         # Переносим в Яндекс Музыку
@@ -333,17 +352,23 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             yandex_client = YandexMusicAPI(token)
             new_playlist = yandex_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
-            for track in tracks:
+            for track in tracks[::-1]:
                 new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
                 if new_track_id and new_album_id:
                     yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
         
         # Переносим в Spotify
@@ -355,6 +380,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             spotify_client = SpotifyAPI(token)
             new_playlist = spotify_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
             for track in tracks:
                 new_track_id = spotify_client.search_track(artist=track['artist'], title=track['title'])
@@ -362,10 +388,15 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                     spotify_client.add_tracks_to_playlist(kind=new_playlist, track_id=new_track_id, album_id=None)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
 
         return Response({"error": "Неизвестная целевая платформа"}, status=400)
