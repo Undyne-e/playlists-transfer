@@ -57,6 +57,7 @@ class YandexSavePlaylistsView(APIView):
                     "user_id": user.id,
                     "title": your_playlist.title,
                     "track_count": your_playlist.track_count,
+                    "tracks_downloaded": your_playlist.tracks_downloaded,
                     "source_platform": "yandex_music"
                 })
 
@@ -83,7 +84,10 @@ class YandexSaveTracksView(APIView):
             playlist = YandexPlaylists.objects.filter(user=user, playlist_uuid=playlist_uuid).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
-            
+
+            playlist.tracks_downloaded = True
+            playlist.save()
+
             yandex_client = YandexMusicAPI(token)
             tracks = yandex_client.get_playlist_tracks(playlist.kind, playlist.uid)
 
@@ -96,7 +100,7 @@ class YandexSaveTracksView(APIView):
                             "title": track['track']['title'],
                             "artist": track['track']['artists'][0]['name'] if track['track']['artists'] else "Unknown",
                             "album": track['track']['albums'][0]['title'] if track['track']['albums'] else "Unknown",
-                            "duration": (track['track']['duration_ms'] // 1000) if track['track']['duration_ms'] else 0,
+                            "duration": (track['track']['duration_ms']) if track['track']['duration_ms'] else 0,
                         }
                     )
             return Response({'message': 'Треки плейлиста успешно сохранены'}, status=status.HTTP_200_OK)
@@ -136,6 +140,7 @@ class YouTubeSavePlaylistsView(APIView):
                     "user_id": user.id,
                     "title": playlist_obj.title,
                     "track_count": playlist_obj.track_count,
+                    "tracks_downloaded": playlist_obj.tracks_downloaded,
                     "source_platform": "youtube_music"
                 })
 
@@ -161,6 +166,9 @@ class YouTubeSaveTracksView(APIView):
             playlist = YouTubePlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            playlist.tracks_downloaded = True
+            playlist.save()
 
             youtube_client = YouTubeMusicAPI(token)
             tracks = youtube_client.get_playlist_tracks(kind=None, playlist_id=playlist_id)
@@ -215,6 +223,7 @@ class SpotifySavePlaylistsView(APIView):
                     "user_id": user.id,
                     "title": playlist_obj.title,
                     "track_count": playlist_obj.track_count,
+                    "tracks_downloaded": playlist_obj.tracks_downloaded,
                     "source_platform": "spotify",
                 })
             return Response({"playlists": saved_playlists}, status=status.HTTP_200_OK)
@@ -240,6 +249,9 @@ class SpotifySaveTracksView(APIView):
             playlist = SpotifyPlaylists.objects.filter(user=user, playlist_id=playlist_id).first()
             if not playlist:
                 return Response({'error': 'Плейлист не найден в базе. Сначала сохраните список плейлистов.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            playlist.tracks_downloaded = True
+            playlist.save()
             
             spotify_client = SpotifyAPI(token)
             tracks = spotify_client.get_playlist_tracks(kind=None, playlist_id=playlist_id, track_count=playlist.track_count)
