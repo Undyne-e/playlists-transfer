@@ -8,6 +8,8 @@ const PlaylistTransfer = () => {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notTransferredTracks, setNotTransferredTracks] = useState([]);
+
 
   const djoserToken = localStorage.getItem("access_token");
   const YandexToken = localStorage.getItem("yandex_token");
@@ -126,8 +128,15 @@ const PlaylistTransfer = () => {
       .then((data) => {
         if (data.error) {
           setStatus(`Ошибка: ${data.error}`);
+          setNotTransferredTracks([]);
         } else {
-          setStatus("Плейлист успешно перенесён!");
+          setStatus(data.message || "Плейлист успешно перенесён!");
+      
+          if (data["not_transferred"] && Array.isArray(data["not_transferred"])) {
+            setNotTransferredTracks(data["not_transferred"]);
+          } else {
+            setNotTransferredTracks([]);
+          }
         }
       })
       .catch(() => setStatus("Ошибка при переносе!"));
@@ -169,6 +178,19 @@ const PlaylistTransfer = () => {
             </button>
 
             {status && <p className="mt-4 text-center font-semibold text-white">{status}</p>}
+            {notTransferredTracks.length > 0 && (
+              <div className="mt-4 bg-gray-700 p-4 rounded-lg">
+                <h4 className="text-white font-semibold mb-2">Не удалось перенести треки:</h4>
+                <ul className="list-disc list-inside text-white text-sm max-h-40 overflow-y-auto">
+                  {notTransferredTracks.map((track, index) => (
+                    <li key={index}>
+                      {track.artist} — {track.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
           </div>
         )}
 

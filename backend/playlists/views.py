@@ -324,6 +324,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             youtube_client = YouTubeMusicAPI(token)
             new_playlist_id = youtube_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
             for track in tracks:
                 track_id = youtube_client.search_track(artist=track["artist"], title=track["title"])
@@ -331,10 +332,15 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                     youtube_client.add_tracks_to_playlist(playlist_id=new_playlist_id, track_id=track_id, kind=None)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
 
         # Переносим в Яндекс Музыку
@@ -346,6 +352,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             yandex_client = YandexMusicAPI(token)
             new_playlist = yandex_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
             for track in tracks:
                 new_track_id, new_album_id = yandex_client.search_track(artist=track['artist'], title=track['title'])
@@ -353,10 +360,15 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                     yandex_client.add_tracks_to_playlist(kind=new_playlist.kind, track_id=new_track_id, album_id=new_album_id)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
         
         # Переносим в Spotify
@@ -368,6 +380,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             spotify_client = SpotifyAPI(token)
             new_playlist = spotify_client.create_playlist(title=playlist.title)
             unsuccessful_cnt = 0
+            not_transferred = []
 
             for track in tracks:
                 new_track_id = spotify_client.search_track(artist=track['artist'], title=track['title'])
@@ -375,10 +388,15 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
                     spotify_client.add_tracks_to_playlist(kind=new_playlist, track_id=new_track_id, album_id=None)
                 else:
                     unsuccessful_cnt += 1
+                    not_transferred.append({
+                        "artist": track["artist"],
+                        "title": track["title"],
+                    })
 
             return Response({
                 "message": "Плейлист перенесён",
-                "not transferred tracks": unsuccessful_cnt
+                "not transferred tracks": unsuccessful_cnt,
+                "not_transferred": not_transferred
             })
 
         return Response({"error": "Неизвестная целевая платформа"}, status=400)
