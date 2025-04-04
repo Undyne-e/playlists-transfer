@@ -9,7 +9,6 @@ from rest_framework.decorators import action
 from .serializers import PlaylistTransferSerializer, YandexPlaylistTracksSerializer, YouTubePlaylistTracksSerializer, SpotifyPlaylistTracksSerializer
 
 #yandex
-import yandex_music
 from .parsers.yandex_music_api import YandexMusicAPI
 from .models import YandexPlaylists, YandexPlaylistTracks
 
@@ -128,6 +127,7 @@ class YouTubeSavePlaylistsView(APIView):
                     playlist_id=playlist['id'],
                     defaults={  
                         "title": playlist['snippet']['title'],
+                        "track_count": playlist['contentDetails']['itemCount'],
                     }
                 )
 
@@ -135,6 +135,7 @@ class YouTubeSavePlaylistsView(APIView):
                     "youtube_playlist_id": playlist_obj.playlist_id,
                     "user_id": user.id,
                     "title": playlist_obj.title,
+                    "track_count": playlist_obj.track_count,
                     "source_platform": "youtube_music"
                 })
 
