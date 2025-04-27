@@ -10,8 +10,7 @@ const DeleteAccount = () => {
       e.preventDefault();
       try {
         await api.delete('/auth/users/me/', { data: { current_password } });
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('email');
+        localStorage.clear();
         navigate('/register');
       } catch (error) {
         console.error('Account deletion failed:', error);
