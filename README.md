@@ -49,6 +49,8 @@
 
 2. укажите соответствующие CLIENT_ID для яндекса, google и spotify которые вы уже получили раннее
 
+3. перейдите по https://oauth.yandex.ru/authorize?response_type=token&client_id=23cabbbdc6cd418abb4b39c32c41195d --> авторизуемся при необходимости и предоставляем доступ --> скопируйте в адресной строке access token и вставте его в .env (в графу VITE_YANDEX_TOKEN)
+
 
 # Запуск сервиса
 

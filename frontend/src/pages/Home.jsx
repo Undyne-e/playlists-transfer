@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaArrowRight } from 'react-icons/fa';
 
 const Home = () => {
+  const navigate = useNavigate();
   // Функции для обработки входа
   const handleGoogleLogin = () => {
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -13,10 +14,13 @@ const Home = () => {
   };
 
   const handleYandexLogin = () => {
-    const YANDEX_CLIENT_ID = import.meta.env.VITE_YANDEX_CLIENT_ID;
-    const REDIRECT_URI = 'http://localhost:5173/yandexcallback';
-    const AUTH_URL = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${YANDEX_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
-    window.location.href = AUTH_URL;
+    // const YANDEX_CLIENT_ID = import.meta.env.VITE_YANDEX_CLIENT_ID;
+    // const REDIRECT_URI = 'http://localhost:5173/yandexcallback';
+    // const AUTH_URL = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${YANDEX_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+    //window.location.href = AUTH_URL;
+    const YANDEX_TOKEN = import.meta.env.VITE_YANDEX_TOKEN;
+    localStorage.setItem('yandex_token', YANDEX_TOKEN);
+    navigate("/yandex/saveplaylists");
   };
 
   const handleSpotifyLogin = () => {
