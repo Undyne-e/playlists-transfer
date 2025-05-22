@@ -382,7 +382,7 @@ class PlaylistTransferViewSet(viewsets.ViewSet):
             unsuccessful_cnt = 0
             not_transferred = []
 
-            for track in tracks:
+            for track in tracks[::-1]:
                 new_track_id = spotify_client.search_track(artist=track['artist'], title=track['title'])
                 if new_track_id:
                     spotify_client.add_tracks_to_playlist(kind=new_playlist, track_id=new_track_id, album_id=None)
