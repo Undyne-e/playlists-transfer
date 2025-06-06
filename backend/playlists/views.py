@@ -273,13 +273,12 @@ class SpotifySaveTracksView(APIView):
 
 
 
-class PlaylistTransferViewSet(viewsets.ViewSet):
-
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated] 
+class PlaylistTransferView(APIView):
     
-    @action(detail=False, methods=["post"])
-    def transfer(self, request):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
         
         serializer = PlaylistTransferSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

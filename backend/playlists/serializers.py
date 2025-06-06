@@ -2,8 +2,8 @@ from rest_framework import serializers
 from .models import YandexPlaylistTracks, YouTubePlaylistTracks, SpotifyPlaylistTracks
 
 class PlaylistTransferSerializer(serializers.Serializer):
-    source_platform = serializers.ChoiceField(choices=["spotify", "yandex_music", "deezer", "apple_music", "youtube_music"])
-    target_platform = serializers.ChoiceField(choices=["spotify", "yandex_music", "deezer", "apple_music", "youtube_music"])
+    source_platform = serializers.ChoiceField(choices=["spotify", "yandex_music", "youtube_music"])
+    target_platform = serializers.ChoiceField(choices=["spotify", "yandex_music", "youtube_music"])
     playlist_uuid = serializers.CharField()
 
 class YandexPlaylistTracksSerializer(serializers.ModelSerializer):

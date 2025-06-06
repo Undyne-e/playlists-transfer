@@ -109,7 +109,7 @@ const PlaylistTransfer = () => {
 
     setStatus("Перенос в процессе...");
 
-    fetch("http://127.0.0.1:8000/api/v1/playlist-transfer/transfer/", {
+    fetch("http://127.0.0.1:8000/api/v1/transfer/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
