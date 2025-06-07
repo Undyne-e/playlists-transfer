@@ -7,14 +7,13 @@ __pycache__/
 *.pdb
 
 # Virtual environment
-venv/
-.VENV/
-*.env
-*.venv
+.env
+.venv
 env/
-.Env/
-.venv/
-.VENV/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Django
 *.log
@@ -23,10 +22,12 @@ db.sqlite3
 /media/
 /staticfiles/
 /static/
+migrations/
 
 # Environments
 *.env
 .env.*
+backend/client_secret.json
 
 # IDE/Editor
 .idea/
